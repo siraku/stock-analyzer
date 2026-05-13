@@ -11,7 +11,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Stock Reversal Analyzer",
-    description="Analyzes Japanese equities for trend reversal signals using technical indicators and AI.",
+    description="Analyzes equities for trend reversal signals using technical indicators and AI.",
     version="1.0.0",
 )
 

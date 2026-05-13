@@ -56,7 +56,7 @@ def get_run(run_id: int, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/latest", response_model=AnalysisRunDetailResponse)
+@router.get("/latest", response_model=AnalysisRunDetailResponse | None)
 def get_latest(db: Session = Depends(get_db)):
     run = (
         db.query(AnalysisRun)
@@ -65,7 +65,7 @@ def get_latest(db: Session = Depends(get_db)):
         .first()
     )
     if not run:
-        raise HTTPException(status_code=404, detail="No completed analysis runs found")
+        return None
     snapshots = (
         db.query(SignalSnapshot)
         .filter(SignalSnapshot.run_id == run.id)
