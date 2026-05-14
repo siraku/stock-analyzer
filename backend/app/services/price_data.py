@@ -21,7 +21,7 @@ def fetch_price_history(ticker: str, db: Session, period: str = "6mo") -> pd.Dat
     latest = (
         db.query(PriceCache)
         .filter(PriceCache.ticker == ticker)
-        .order_by(PriceCache.date.desc())
+        .order_by(PriceCache.price_date.desc())
         .first()
     )
 
@@ -56,7 +56,7 @@ def _refresh_cache(ticker: str, db: Session, period: str) -> None:
 
         existing = (
             db.query(PriceCache)
-            .filter(PriceCache.ticker == ticker, PriceCache.date == trade_date)
+            .filter(PriceCache.ticker == ticker, PriceCache.price_date == trade_date)
             .first()
         )
         if existing:
@@ -69,7 +69,7 @@ def _refresh_cache(ticker: str, db: Session, period: str) -> None:
         else:
             db.add(PriceCache(
                 ticker=ticker,
-                date=trade_date,
+                price_date=trade_date,
                 open=float(row.get("Open", 0) or 0),
                 high=float(row.get("High", 0) or 0),
                 low=float(row.get("Low", 0) or 0),
@@ -85,7 +85,7 @@ def _load_from_cache(ticker: str, db: Session) -> pd.DataFrame:
     rows = (
         db.query(PriceCache)
         .filter(PriceCache.ticker == ticker)
-        .order_by(PriceCache.date.asc())
+        .order_by(PriceCache.price_date.asc())
         .all()
     )
     if not rows:
@@ -93,7 +93,7 @@ def _load_from_cache(ticker: str, db: Session) -> pd.DataFrame:
 
     data = [
         {
-            "Date": r.date,
+            "Date": r.price_date,
             "Open": r.open,
             "High": r.high,
             "Low": r.low,
@@ -113,7 +113,7 @@ def get_current_price(ticker: str, db: Session) -> float | None:
     row = (
         db.query(PriceCache)
         .filter(PriceCache.ticker == ticker)
-        .order_by(PriceCache.date.desc())
+        .order_by(PriceCache.price_date.desc())
         .first()
     )
     return row.close if row else None

@@ -19,7 +19,7 @@ def get_ticker_info(ticker: str, db: Session = Depends(get_db)):
     price_row = (
         db.query(PriceCache)
         .filter(PriceCache.ticker == ticker)
-        .order_by(PriceCache.date.desc())
+        .order_by(PriceCache.price_date.desc())
         .first()
     )
     return TickerInfoResponse(

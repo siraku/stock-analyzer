@@ -10,7 +10,7 @@ class PriceCache(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ticker: Mapped[str] = mapped_column(String(20), nullable=False)
-    date: Mapped[date] = mapped_column(Date, nullable=False)
+    price_date: Mapped[date] = mapped_column(Date, nullable=False)
     open: Mapped[float | None] = mapped_column(Float)
     high: Mapped[float | None] = mapped_column(Float)
     low: Mapped[float | None] = mapped_column(Float)
@@ -19,6 +19,6 @@ class PriceCache(Base):
     fetched_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
     __table_args__ = (
-        UniqueConstraint("ticker", "date", name="uq_price_ticker_date"),
-        Index("idx_price_cache_ticker_date", "ticker", "date"),
+        UniqueConstraint("ticker", "price_date", name="uq_price_ticker_date"),
+        Index("idx_price_cache_ticker_date", "ticker", "price_date"),
     )
