@@ -1,9 +1,9 @@
 """
-Claude API integration for interpreting technical indicator snapshots.
+OpenRouter API integration for interpreting technical indicator snapshots.
 """
 import json
 
-import anthropic
+import httpx
 
 from app.config import settings
 from app.services.indicators import SignalSnapshot
@@ -54,23 +54,41 @@ Respond with this exact JSON structure:
 
 def interpret(snap: SignalSnapshot, score_value: int) -> dict:
     """
-    Call Claude API and return parsed analysis dict.
+    Call OpenRouter API and return parsed analysis dict.
     Falls back to a score-based result if the API call fails.
     """
-    if not settings.claude_api_key:
+    if not settings.openrouter_api_key:
         return _fallback_result(snap, score_value)
 
     try:
-        client = anthropic.Anthropic(api_key=settings.claude_api_key)
-        message = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=512,
-            system=_SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": build_prompt(snap, score_value)}],
+        response = httpx.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.openrouter_api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": settings.openrouter_model,
+                "max_tokens": 512,
+                "messages": [
+                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "user", "content": build_prompt(snap, score_value)},
+                ],
+            },
+            timeout=30.0,
         )
-        raw = message.content[0].text.strip()
+        response.raise_for_status()
+        data = response.json()
+        raw = data["choices"][0]["message"]["content"].strip()
+        # Strip markdown code fences if present (e.g. ```json ... ```)
+        if raw.startswith("```"):
+            raw = raw.split("```", 2)[1]  # drop opening ```[json]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.rstrip("`").strip()
         result = json.loads(raw)
-        result["tokens_used"] = message.usage.input_tokens + message.usage.output_tokens
+        usage = data.get("usage", {})
+        result["tokens_used"] = usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
         return result
     except json.JSONDecodeError:
         return _fallback_result(snap, score_value)
@@ -87,7 +105,7 @@ def _fallback_result(snap: SignalSnapshot, score_value: int) -> dict:
         "key_signals": _derive_key_signals(snap),
         "risk_factors": ["AI analysis unavailable — result based on indicator scoring only"],
         "summary": f"Score-based assessment: {score_value}/150. "
-                   f"Reversal likelihood: {label}. Configure Claude API key for detailed analysis.",
+                   f"Reversal likelihood: {label}. Configure OpenRouter API key for detailed analysis.",
         "tokens_used": 0,
     }
 

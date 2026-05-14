@@ -3,7 +3,8 @@ import { Save } from 'lucide-react'
 import client from '@/api/client'
 
 interface SettingsData {
-  claude_api_key_set: boolean
+  openrouter_api_key_set: boolean
+  openrouter_model: string
   analysis_score_threshold: number
   price_cache_ttl_minutes: number
 }
@@ -11,6 +12,7 @@ interface SettingsData {
 export default function SettingsPage() {
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const [apiKey, setApiKey] = useState('')
+  const [model, setModel] = useState('')
   const [threshold, setThreshold] = useState(40)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -20,16 +22,20 @@ export default function SettingsPage() {
       const data: SettingsData = r.data
       setSettings(data)
       setThreshold(data.analysis_score_threshold)
+      setModel(data.openrouter_model)
     })
   }, [])
 
   const handleSave = async () => {
     setSaving(true)
     try {
-      const body: { claude_api_key?: string; analysis_score_threshold?: number } = {
-        analysis_score_threshold: threshold,
-      }
-      if (apiKey) body.claude_api_key = apiKey
+      const body: {
+        openrouter_api_key?: string
+        openrouter_model?: string
+        analysis_score_threshold?: number
+      } = { analysis_score_threshold: threshold }
+      if (apiKey) body.openrouter_api_key = apiKey
+      if (model) body.openrouter_model = model
 
       const r = await client.put('/settings', body)
       setSettings(r.data)
@@ -46,26 +52,41 @@ export default function SettingsPage() {
       <h1 className="text-xl font-bold text-white mb-6">Settings</h1>
 
       <div className="space-y-5">
-        {/* API Key */}
+        {/* OpenRouter API Key */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <label className="block text-sm font-medium text-gray-300 mb-1">Claude API Key</label>
+          <label className="block text-sm font-medium text-gray-300 mb-1">OpenRouter API Key</label>
           <p className="text-xs text-gray-600 mb-3">
-            Required for AI-powered analysis. Get yours at console.anthropic.com.
+            Required for AI-powered analysis. Get yours at openrouter.ai/keys.
           </p>
           <div className="flex items-center gap-2 mb-2">
-            <span className={`w-2 h-2 rounded-full ${settings?.claude_api_key_set ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            <span className={`w-2 h-2 rounded-full ${settings?.openrouter_api_key_set ? 'bg-emerald-500' : 'bg-red-500'}`} />
             <span className="text-xs text-gray-500">
-              {settings?.claude_api_key_set ? 'API key configured' : 'API key not set'}
+              {settings?.openrouter_api_key_set ? 'API key configured' : 'API key not set'}
             </span>
           </div>
           <input
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="sk-ant-..."
+            placeholder="sk-or-..."
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-indigo-500"
           />
           <p className="text-xs text-gray-600 mt-1">Leave blank to keep existing key.</p>
+        </div>
+
+        {/* Model */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <label className="block text-sm font-medium text-gray-300 mb-1">OpenRouter Model</label>
+          <p className="text-xs text-gray-600 mb-3">
+            Any model ID from openrouter.ai/models (e.g. openai/gpt-4o).
+          </p>
+          <input
+            type="text"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="openai/gpt-4o"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-indigo-500"
+          />
         </div>
 
         {/* Score threshold */}
@@ -74,7 +95,7 @@ export default function SettingsPage() {
             AI Analysis Threshold
           </label>
           <p className="text-xs text-gray-600 mb-3">
-            Stocks scoring above this value will be sent to Claude for analysis. Range: 0–150.
+            Stocks scoring above this value will be sent to the AI for analysis. Range: 0–150.
           </p>
           <div className="flex items-center gap-3">
             <input
