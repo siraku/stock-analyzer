@@ -133,6 +133,36 @@ Scores ≥ 70 → **HIGH**, ≥ 40 → **MEDIUM**, ≥ 20 → **LOW**, < 20 → 
 
 ---
 
+## Indicator Glossary
+
+### RSI — Relative Strength Index
+RSI measures how fast and how far a stock's price has moved recently, on a scale of 0 to 100.
+
+- **Below 30** means the stock has fallen very quickly and may be "oversold" — sellers may be exhausted, making a bounce more likely.
+- **Above 70** means the stock has risen very quickly and may be "overbought."
+- This app focuses on the oversold side (RSI < 30) as a potential reversal signal.
+
+A **bullish divergence** is a stronger signal: it means the stock price made a new low, but RSI did not — suggesting the selling momentum is weakening even as the price fell further.
+
+### Stochastic Oscillator (%K and %D)
+Stochastic compares a stock's current closing price to its price range over the past 14 days, also on a 0–100 scale.
+
+- **Below 20** = the stock is closing near the bottom of its recent range (oversold zone).
+- **%K** is the fast line (more sensitive). **%D** is the slow line (a smoothed average of %K).
+- A **bullish crossover** happens when %K crosses above %D while both are in the oversold zone — this suggests downward momentum is reversing and a recovery may be starting.
+
+Think of it as asking: "Is today's close unusually low compared to where this stock has been trading lately?"
+
+### Volume Ratio
+Volume ratio compares today's trading volume to the 20-day average volume.
+
+- A ratio of **1.0** = normal activity.
+- A ratio of **2.0** = twice the usual number of shares traded today.
+
+A high volume spike during a price bounce is an important confirmation signal — it means many participants are actively buying, not just a small, low-conviction move. A reversal on very low volume is far less reliable.
+
+---
+
 ## Project Structure
 
 ```

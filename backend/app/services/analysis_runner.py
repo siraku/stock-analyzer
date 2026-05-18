@@ -10,6 +10,7 @@ from app.config import settings
 from app.models.analysis import AnalysisRun, SignalSnapshot as SignalSnapshotModel
 from app.models.watchlist import WatchlistTicker
 from app.services import ai_interpreter, indicators, scoring
+from app.services.fundamental_data import fetch_fundamentals
 from app.services.price_data import fetch_price_history
 
 
@@ -71,7 +72,8 @@ def _analyze_ticker(ticker: str, db: Session, run_id: int) -> SignalSnapshotMode
 
     # Only call AI for stocks above threshold
     if score_value >= settings.analysis_score_threshold:
-        ai_result = ai_interpreter.interpret(snap, score_value)
+        fundamentals = fetch_fundamentals(ticker)
+        ai_result = ai_interpreter.interpret(snap, score_value, fundamentals)
     else:
         ai_result = {
             "reversal_likelihood": scoring.get_signal_label(score_value),

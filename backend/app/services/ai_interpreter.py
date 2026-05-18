@@ -2,6 +2,7 @@
 OpenRouter API integration for interpreting technical indicator snapshots.
 """
 import json
+from typing import TYPE_CHECKING
 
 import httpx
 
@@ -9,15 +10,21 @@ from app.config import settings
 from app.services.indicators import SignalSnapshot
 from app.services.scoring import get_signal_label
 
+if TYPE_CHECKING:
+    from app.services.fundamental_data import FundamentalSnapshot
 
-_SYSTEM_PROMPT = """You are a technical analysis assistant for global equities. \
-Your task is to assess whether a stock is showing credible trend reversal signals \
-based on provided technical indicator data.
+
+_SYSTEM_PROMPT = """You are a financial analysis assistant for global equities. \
+Your task is to assess whether a stock is showing credible trend reversal signals. \
+You will be given technical indicator data and, when available, fundamental business context \
+(revenue trend, margins, R&D spend, short interest, analyst sentiment, upcoming earnings). \
+Use both to form your judgment — a reversal backed by improving fundamentals or a near-term catalyst \
+is more credible than a purely technical signal on a deteriorating business.
 Be concise, specific, and honest about uncertainty.
 Always respond with valid JSON only — no markdown, no extra text."""
 
 
-def build_prompt(snap: SignalSnapshot, score_value: int) -> str:
+def build_prompt(snap: SignalSnapshot, score_value: int, fundamentals: "FundamentalSnapshot | None" = None) -> str:
     ema50_pct = None
     if snap.price_current and snap.ema50:
         ema50_pct = round((snap.price_current - snap.ema50) / snap.ema50 * 100, 1)
@@ -26,7 +33,7 @@ def build_prompt(snap: SignalSnapshot, score_value: int) -> str:
 Current price: {snap.price_current}
 52-week range: {snap.price_52w_low} - {snap.price_52w_high}
 
-INDICATOR SNAPSHOT:
+TECHNICAL INDICATOR SNAPSHOT:
 - RSI(14): {snap.rsi_14} [oversold threshold: 30]
 - RSI bullish divergence detected: {snap.rsi_divergence}
 - MACD value: {snap.macd_value}, Signal: {snap.macd_signal}, Histogram: {snap.macd_histogram}
@@ -40,19 +47,25 @@ INDICATOR SNAPSHOT:
 - Stochastic bullish crossover in oversold zone: {snap.stoch_crossover}
 - Candlestick pattern detected: {snap.candle_pattern or "none"}
 - Pre-score: {score_value}/150
+"""
 
+    if fundamentals is not None:
+        from app.services.fundamental_data import format_for_prompt
+        prompt += "\n" + format_for_prompt(fundamentals) + "\n"
+
+    prompt += """
 Respond with this exact JSON structure:
-{{
+{
   "reversal_likelihood": "high|medium|low|none",
   "confidence": <integer 0-100>,
   "key_signals": ["<signal 1>", "<signal 2>"],
   "risk_factors": ["<risk 1>", "<risk 2>"],
   "summary": "<2-3 sentence analysis in English>"
-}}"""
+}"""
     return prompt
 
 
-def interpret(snap: SignalSnapshot, score_value: int) -> dict:
+def interpret(snap: SignalSnapshot, score_value: int, fundamentals: "FundamentalSnapshot | None" = None) -> dict:
     """
     Call OpenRouter API and return parsed analysis dict.
     Falls back to a score-based result if the API call fails.
@@ -72,7 +85,7 @@ def interpret(snap: SignalSnapshot, score_value: int) -> dict:
                 "max_tokens": 512,
                 "messages": [
                     {"role": "system", "content": _SYSTEM_PROMPT},
-                    {"role": "user", "content": build_prompt(snap, score_value)},
+                    {"role": "user", "content": build_prompt(snap, score_value, fundamentals)},
                 ],
             },
             timeout=30.0,
