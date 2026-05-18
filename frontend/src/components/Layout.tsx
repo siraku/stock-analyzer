@@ -1,9 +1,10 @@
-import { BarChart2, List, Settings } from 'lucide-react'
+import { BarChart2, List, PieChart, Settings } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: BarChart2 },
   { to: '/watchlist', label: 'Watchlist', icon: List },
+  { to: '/portfolio', label: 'Portfolio', icon: PieChart },
   { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
